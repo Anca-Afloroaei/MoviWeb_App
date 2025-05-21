@@ -1,8 +1,11 @@
+from dotenv import load_dotenv
 from flask import Flask, redirect, render_template, request, url_for
 from datamanager.sqlite_data_manager import SQLiteDataManager
 from flask_sqlalchemy import SQLAlchemy
 from models import db, User, Movie
 import os
+import requests
+from config import OMDB_API_KEY
 
 
 
@@ -10,7 +13,11 @@ app = Flask(__name__)
 # basedir = os.path.abspath(os.path.dirname(__file__))
 # app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'data', 'moviwebapp.db')
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviwebapp.db"
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///moviwebapp.db" # is it doesn't work remove instance
+
+#db.init_app(app)
+
+#load_dotenv()   # I have it in config.py
 
 data_manager = SQLiteDataManager(app)
 
@@ -47,7 +54,7 @@ def add_users():
         try:
             new_user = User(name=user_name)
             data_manager.add_user(new_user)
-            return redirect(url_for('user_movies', user_id=new_user.id))
+            return redirect(url_for('list_user_movies', user_id=new_user.id))
         except Exception as e:
             print(f"Failed to add user: {e}")
 
@@ -66,34 +73,86 @@ def add_users():
 @app.route('/users/<user_id>/add_movie', methods=['GET', 'POST'])
 def add_movie(user_id):
     """ allows the additions of new movies """
+
     user = User.query.get_or_404(user_id)
+    api_key = os.getenv("API_KEY")
 
     if request.method == 'POST':
         title = request.form.get('title')
-        director = request.form.get('director')
-        year = request.form.get('year')
-        rating = request.form.get('rating')
+        rating = float(request.form.get('rating'))
 
-        #user_id = request.form.get('user_id')
-        try:
-            new_movie = Movie(
-                title=title,
-                director=director,
-                 year=year,
-                 rating=rating,
-                 user_id=user_id
-            )
+        url = f"http://www.omdbapi.com/?t={title}&apikey={OMDB_API_KEY}"
+        # params = {
+        #     "t": title,
+        #     "apikey": api_key
+        # }
+        #response = requests.get(url, params=params)
 
-            #movie = Movie(title=title, user_id=user_id)
-            data_manager.add_movie(new_movie)
-            return redirect(url_for('list_user_movies', user_id=user_id))
+        response = requests.get(url)
 
-            #return render_template('message.html', message="Movie added!")
-        except Exception as e:
-            print(f"Failed to add movie: {e}")
-            return render_template('message.html', message="Failed to add movie.", user_id=user_id)
+        if response.status_code == 200:
+            data = response.json()
+
+            if data.get("Response") != "False":
+                try:
+                    new_movie = Movie(
+                        title=data.get("Title", title),
+                        director=data.get("Director", "Unknown"),
+                        year=int(data.get("Year", 0)),
+                        rating=rating,
+                        user_id=user_id
+                    )
+
+                    data_manager.add_movie(new_movie)
+                    return redirect(url_for('list_user_movies', user_id=user_id))
+
+                except Exception as e:
+                    print(f"Failed to add movie: {e}")
+                    return render_template('message.html', message="Failed to add movie.", user_id=user_id)
+
+            else:
+                return render_template('message.html', message="Failed to add movie. Movie not found", user_id=user_id)
+
+        else:
+            return render_template('message.html', message="Error connecting to the OMDb API", user_id=user_id)
 
     return render_template('add_movie.html', user=user)
+
+
+
+
+
+
+
+
+
+
+
+
+    #     director = request.form.get('director')
+    #     year = request.form.get('year')
+    #     rating = request.form.get('rating')
+    #
+    #     #user_id = request.form.get('user_id')
+    #     try:
+    #         new_movie = Movie(
+    #             title=title,
+    #             director=director,
+    #              year=year,
+    #              rating=rating,
+    #              user_id=user_id
+    #         )
+    #
+    #         #movie = Movie(title=title, user_id=user_id)
+    #         data_manager.add_movie(new_movie)
+    #         return redirect(url_for('list_user_movies', user_id=user_id))
+    #
+    #         #return render_template('message.html', message="Movie added!")
+    #     except Exception as e:
+    #         print(f"Failed to add movie: {e}")
+    #         return render_template('message.html', message="Failed to add movie.", user_id=user_id)
+    #
+    # return render_template('add_movie.html', user=user)
 
     # return '''
     #     <form method="post">
@@ -108,12 +167,40 @@ def add_movie(user_id):
 @app.route('/users/<user_id>/update_movie/<movie_id>', methods=['GET', 'POST'])
 def update_movie(user_id, movie_id):
     """ allows updates for a movie """
-    if request.method == 'POST':
-        title = request.form.get('title')
-        movie = Movie(title=title, user_id=user_id, movie_id=movie_id)
-        data_manager.update_movie(movie)
+    user = User.query.get_or_404(user_id) # added for API
+    movie = Movie.query.get_or_404(movie_id)
 
-    return render_template('update_movie.html', user_id=user_id, movie_id=movie_id)
+    if request.method == 'POST':
+        try:
+            new_title = request.form.get('title') # added for API
+            new_rating = request.form.get('rating')
+
+            if new_title:
+                movie.title = new_title
+            if new_rating:
+                movie.rating = float(new_rating)
+            db.session.commit()
+            #data_manager.update_movie(movie)
+            # movie.title = request.form.get('title')
+            # movie.director = request.form.get('director')
+            # movie.year = request.form.get('year')
+            # movie.rating = request.form.get('rating')
+            # movie.title = request.form.get('title')
+            # movie.director = request.form.get('director')
+            # movie.year = request.form.get('year')
+            # #movie.rating = request.form.get('rating')
+            # movie.user_id = request.form.get('user_id')
+
+
+            return redirect(url_for('list_user_movies', user_id=user_id))
+        except Exception as e:
+            db.session.rollback()
+            print(f"Failed to update movie: {e}")
+            return render_template('message.html', message="Failed to update movie.")
+
+
+
+    return render_template('update_movie.html', movie=movie, user_id=user_id)
 
     # return '''
     #     <form method="post">
@@ -124,16 +211,31 @@ def update_movie(user_id, movie_id):
     # '''
 
 
-@app.route('/users/<user_id>/delete_movie/<movie_id>', methods=['GET'])
+@app.route('/users/<user_id>/delete_movie/<movie_id>', methods=['GET', 'POST'])
 def delete_movie(user_id, movie_id):
-    """ allows updates for a movie """
+    """ Deletes a movie and returns a message. """
     # title = request.form.get('title')
     # movie = Movie(title=title, user_id=user_id, movie_id=movie_id)
-    data_manager.delete_movie(movie_id)
+    #data_manager.delete_movie(movie_id)
+    movie = Movie.query.filter_by(id=movie_id, user_id=user_id).first()
+    
+    if movie:
+        try:
+            db.session.delete(movie)
+            db.session.commit()
+            return render_template('message.html', message=f"Movie {movie.title} deleted for user {user_id}!",
+                                   user_id=user_id)
+        except Exception as e:
+            db.session.rollback()
+            print(f"Failed to delete movie: {e}")
+            return render_template('message.html', message="Failed to delete movie.", user_id=user_id)
+    else:
+        return render_template('message.html', message="Movie not found.", user_id=user_id)
 
-    return render_template('message.html', message=f"Movie {movie_id} deleted for User {user_id}!")
+    
+    
 
-
+    #return render_template('message.html', message=f"Movie {movie_id} deleted for User {user_id}!")
 
 
 

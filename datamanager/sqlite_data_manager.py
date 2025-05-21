@@ -112,44 +112,53 @@ class SQLiteDataManager(DataManagerInterface):
 
     def update_movie(self, movie):
         """ docstring """
-        movie = Movie.query.get_or_404(id)
-        title = movie.title
+        #movie = Movie.query.get_or_404(id)
+        #title = movie.title
 
-        if request.method == 'POST':
+        current_movie = Movie.query.get_or_404(movie.id)
+        current_movie.title = movie.title
+        current_movie.director = movie.director
+        current_movie.year = movie.year
+        current_movie.rating = movie.rating
+        db.session.commit()
+        print(f"Movie '{current_movie.title}' updated successfully!")
 
-            movie.title = request.form.get('title')
-            movie.director = request.form.get('director')
-            movie.year = request.form.get('year')
-            movie.rating = request.form.get('rating')
-            movie.user_id = request.form.get('user_id')
-
-            try:
-                db.session.commit()
-                print(f"Movie '{movie.title}' updated successfully!")
-            except Exception as e:
-                db.session.rollback()
-                print(f"Failed to update movie: {str(e)}")
+        # if request.method == 'POST':
+        #
+        #     movie.title = request.form.get('title')
+        #     movie.director = request.form.get('director')
+        #     movie.year = request.form.get('year')
+        #     movie.rating = request.form.get('rating')
+        #     movie.user_id = request.form.get('user_id')
+        #
+        #     try:
+        #         db.session.commit()
+        #         print(f"Movie '{movie.title}' updated successfully!")
+        #     except Exception as e:
+        #         db.session.rollback()
+        #         print(f"Failed to update movie: {str(e)}")
 
         #return render_template('add_book.html', authors=authors)
 
 
-
-    def delete_movie(self, movie):
+    def delete_movie(self, movie_id):
         """ docstring """
-        """This function deletes a book, and deletes its author if the author has no other books."""
-        movie = Movie.query.get_or_404(id)
+        #"""This function deletes a book, and deletes its author if the author has no other books."""
+        movie = Movie.query.get_or_404(movie_id)
         title = movie.title
-        user = movie.user_id
+        user_id = movie.user_id
 
         try:
             db.session.delete(movie)
             db.session.commit()
 
             # Check if user has any other movies
-            other_movies = Movie.query.filter_by(user_id=user.id).count()
+            other_movies = Movie.query.filter_by(user_id=user_id).count()
             if other_movies == 0:
-                db.session.delete(user)
-                db.session.commit()
+                user = User.query.get(user_id)
+                if user:
+                    db.session.delete(user)
+                    db.session.commit()
 
             print(f"Deleted movie '{title}' successfully.")
             #return redirect(f"/?deleted={title}")
@@ -158,8 +167,8 @@ class SQLiteDataManager(DataManagerInterface):
             print(f"Error deleting movie: {str(e)}")
             #return redirect("/")
 
-            db.session.rollback()
-            print(f"Failed to add user: {str(e)}")
+            # db.session.rollback()
+            # print(f"Failed to add user: {str(e)}")
 
 
 
