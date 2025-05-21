@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request
+from flask import Flask, redirect, render_template, request, url_for
 from datamanager.sqlite_data_manager import SQLiteDataManager
 from flask_sqlalchemy import SQLAlchemy
 from models import db, User, Movie
@@ -33,10 +33,10 @@ def list_users():
 @app.route('/users/<user_id>', methods=['GET'])
 def list_user_movies(user_id):
     """ shows a specific user’s list of favorite movies """
-    movies = data_manager.get_user_movies(user_id)
+    #movies = data_manager.get_user_movies(user_id)
     #return movies
-    return render_template('user_movies.html', user_id=user_id)
-
+    user = User.query.get_or_404(user_id)
+    return render_template('user_movies.html', user=user, movies=user.movie)
 
 
 @app.route('/add_user', methods=['GET', 'POST'])
@@ -44,9 +44,15 @@ def add_users():
     """ allows the additions of new users """
     if request.method == 'POST':
         user_name = request.form.get('name')
-        data_manager.add_user()
+        try:
+            new_user = User(name=user_name)
+            data_manager.add_user(new_user)
+            return redirect(url_for('user_movies', user_id=new_user.id))
+        except Exception as e:
+            print(f"Failed to add user: {e}")
 
-    return render_template('add_users.html', user_name=user_name)
+    return render_template('add_user.html')
+
 
     # return '''
     #     <form method="post">
@@ -60,12 +66,34 @@ def add_users():
 @app.route('/users/<user_id>/add_movie', methods=['GET', 'POST'])
 def add_movie(user_id):
     """ allows the additions of new movies """
+    user = User.query.get_or_404(user_id)
+
     if request.method == 'POST':
         title = request.form.get('title')
-        movie = Movie(title=title, user_id=user_id)
-        data_manager.add_movie(movie)
+        director = request.form.get('director')
+        year = request.form.get('year')
+        rating = request.form.get('rating')
 
-    return render_template('add_movie.html', user_id=user_id)
+        #user_id = request.form.get('user_id')
+        try:
+            new_movie = Movie(
+                title=title,
+                director=director,
+                 year=year,
+                 rating=rating,
+                 user_id=user_id
+            )
+
+            #movie = Movie(title=title, user_id=user_id)
+            data_manager.add_movie(new_movie)
+            return redirect(url_for('list_user_movies', user_id=user_id))
+
+            #return render_template('message.html', message="Movie added!")
+        except Exception as e:
+            print(f"Failed to add movie: {e}")
+            return render_template('message.html', message="Failed to add movie.", user_id=user_id)
+
+    return render_template('add_movie.html', user=user)
 
     # return '''
     #     <form method="post">
