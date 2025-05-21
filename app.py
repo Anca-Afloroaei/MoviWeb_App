@@ -32,18 +32,29 @@ def home():
 @app.route('/users', methods=['GET'])
 def list_users():
     """ presents a list of all users """
-    users = data_manager.get_all_users()
-    #return str(users)  # Temporarily returning users as a string
-    return render_template('users.html', users=users)
+    try:
+        users = data_manager.get_all_users()
+        return render_template('users.html', users=users)
+        #return str(users)  # Temporarily returning users as a string
+    except Exception as e:
+        print(f"Error retrieving users: {e}")
+        return render_template('message.html', message="Failed to retrieve the users.")
+
+    #return render_template('users.html', users=users)
 
 
-@app.route('/users/<user_id>', methods=['GET'])
+@app.route('/users/<int:user_id>', methods=['GET'])
 def list_user_movies(user_id):
     """ shows a specific user’s list of favorite movies """
     #movies = data_manager.get_user_movies(user_id)
     #return movies
-    user = User.query.get_or_404(user_id)
-    return render_template('user_movies.html', user=user, movies=user.movie)
+    try:
+        user = User.query.get_or_404(user_id)
+        #return render_template('user_movies.html', user=user)
+        return render_template('user_movies.html', user=user, movies=user.movies)
+    except Exception as e:
+        print(f"Error retrieving movies: {e}")
+        return render_template('message.html', message="Failed to retrieve the movies.")
 
 
 @app.route('/add_user', methods=['GET', 'POST'])
@@ -236,6 +247,16 @@ def delete_movie(user_id, movie_id):
     
 
     #return render_template('message.html', message=f"Movie {movie_id} deleted for User {user_id}!")
+
+
+@app.errorhandler(404)
+def page_not_found(e):
+    return render_template('404.html'), 404
+
+
+@app.errorhandler(500)
+def internal_server_error(e):
+    return render_template('500.html'), 500
 
 
 
