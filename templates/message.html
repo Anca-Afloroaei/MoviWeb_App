@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <title>Message</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h2>{{ message }}</h2>
-
-    {% if user_id %}
-        <a href="{{ url_for('list_user_movies', user_id=user_id) }}">Back to my favorite movies</a>
-    {% else %}
-        <a href="{{ url_for('home') }}">Return home</a>
-    {% endif %}
+    <div class="container">
+        <h1>{{ message }}</h1>
+        {% if user_id %}
+            <a href="{{ url_for('list_user_movies', user_id=user_id) }}" class="button">Back to Movies</a>
+        {% else %}
+            <a href="{{ url_for('home') }}" class="button">Back to Home</a>
+        {% endif %}
+    </div>
 </body>
 </html>
-

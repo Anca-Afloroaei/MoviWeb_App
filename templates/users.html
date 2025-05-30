@@ -2,16 +2,75 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>MoviWeb App - Users</title>
+    <title>All Users</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <style>
+        .username {
+            font-size: 2em;
+            font-weight: bold;
+            color: #356d9d; /* soft, dark pastel blue */
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .user-card {
+            background-color: #dff0f8; /* light pastel blue */
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: center;
+        }
+
+        .user-card:hover {
+            transform: scale(1.02);
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+        }
+
+        .user-buttons {
+            margin-top: 15px;
+        }
+
+        .button {
+            margin: 5px;
+            padding: 10px 20px;
+            font-size: 1em;
+            font-weight: bold;
+            text-decoration: none;
+            color: white;
+            background-color: #a2c5f5; /* your earlier pastel blue */
+            border-radius: 8px;
+            display: inline-block;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .button:hover {
+            background-color: #8bb3ea;
+            transform: scale(1.05);
+        }
+    </style>
 </head>
 <body>
-    <h1>Users</h1>
-
-    <ul>
-        {% for user in users %}
-            <li><a href="/users/{{ user.id }}">{{ user.name }}</a></li>
-        {% endfor %}
-    </ul>
+    <div class="container">
+        <h1>All Users</h1>
+        {% if users %}
+            <ul style="list-style-type: none; padding: 0;">
+                {% for user in users %}
+                    <li class="user-card">
+                        <div class="username">{{ user.name }}</div>
+                        <div class="user-buttons">
+                            <a href="{{ url_for('list_user_movies', user_id=user.id) }}" class="button">View Movies</a>
+                            <a href="{{ url_for('add_movie', user_id=user.id) }}" class="button">Add Movie</a>
+                        </div>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No users found.</p>
+        {% endif %}
+        <a href="{{ url_for('add_users') }}" class="button">Add User</a>
+        <a href="{{ url_for('home') }}" class="button">Back to Home</a>
+    </div>
 </body>
 </html>

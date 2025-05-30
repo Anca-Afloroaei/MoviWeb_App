@@ -2,12 +2,14 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Welcome to MoviWeb App</title>
+    <title>Home - Movie Web App</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>Welcome to the MoviWeb App</h1>
-    <p>This is the homepage.</p>
-    <p><a href="/users">View Users</a></p>
+    <div class="container">
+        <h1>Welcome to the Movie Web App!</h1>
+        <a href="{{ url_for('list_users') }}" class="button">View All Users</a>
+        <a href="{{ url_for('add_users') }}" class="button">Add New User</a>
+    </div>
 </body>
 </html>

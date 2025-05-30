@@ -1,11 +1,15 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Server Error</title>
+    <meta charset="UTF-8">
+    <title>Internal Server Error</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <h1>500 - Internal Server Error</h1>
-    <p>Something went wrong on our end. Please try again later.</p>
-    <a href="/">Go back to homepage</a>
+    <div class="container">
+        <h1>500 - Server Error</h1>
+        <p>Oops! Something went wrong on our end.</p>
+        <a href="{{ url_for('home') }}" class="button">Return Home</a>
+    </div>
 </body>
 </html>
