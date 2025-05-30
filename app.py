@@ -251,11 +251,13 @@ def delete_movie(user_id, movie_id):
 
 @app.errorhandler(404)
 def page_not_found(e):
+    """ displays a 404 not found error page """
     return render_template('404.html'), 404
 
 
 @app.errorhandler(500)
 def internal_server_error(e):
+    """ displays a 500 internal server error page """
     return render_template('500.html'), 500
 
 
